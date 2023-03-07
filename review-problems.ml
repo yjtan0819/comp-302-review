@@ -63,7 +63,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let append l1 l2 = assert false
+  let append l1 l2 = match l1 with
+    | Nil -> l2
+    | Cons (h, t) -> Cons (h, append t l2)
 
   (* Prove, using induction, the following theorem.
 
