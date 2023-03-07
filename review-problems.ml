@@ -52,7 +52,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let of_list l = assert false
+  let of_list l = match l with
+    | [] -> Nil
+    | h::t -> Cons (h, of_list t)
 
   (* append : 'a mylist -> 'a mylist -> 'a mylist
      Concatenate two lists together.
