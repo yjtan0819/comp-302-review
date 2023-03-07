@@ -89,7 +89,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let map f l = assert false
+  let map f l = match l with
+    | Nil -> Nil
+    | Cons (h, t) -> Cons (f h, map f t)
 
   (* length : 'a mylist -> int
      Mimics the List.length function.
@@ -97,7 +99,16 @@ module Functions = struct
 
      Rank: *
    *)
-  let length l = assert false
+  let length l = match l with
+    | Nil -> 0
+    | Cons (h, t) -> 1 + length t
+
+  let length' l =
+  let helper l acc =
+    match l with 
+    | Nil -> acc
+    | Cons(h,t) -> helper t (acc+1)
+  in helper l 0
 
   (* Prove, using induction, the following theorems.
 
@@ -119,7 +130,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let fold_right f l e = assert false
+  let rec fold_right f l e = match l with
+  | Nil -> e
+  | Cons(h,t) -> f h (fold_right f t e)
 
   (* According to the description above, `fold_right f l e` takes a
      list
@@ -140,7 +153,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let fold_left f e l = assert false
+  let rec fold_left f e l = match l with
+  | None -> e
+  | Cons(x, xs) -> fold_left f (f e x) xs
 
   (* Theoretically, any recursive function you can write for lists
      can be implemented with fold_right, so in particular, one should
