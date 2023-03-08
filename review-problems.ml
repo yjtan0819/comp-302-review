@@ -179,7 +179,7 @@ module Functions = struct
 
      Rank: **
    *)
-  let map' f l = assert false
+  let map' f l = fold_right (fun x acc-> (f x) :: acc) l []
 
   (* Prove, using induction on lists, the following.
 
@@ -198,7 +198,10 @@ module Functions = struct
      Implement this as a recursive function.
      Rank: *
    *)
-  let combine l1 l2 = assert false
+  let rec combine l1 l2 = 
+    match l1, l2 with
+    | Nil, Nil -> Nil
+    | Cons(x, xs), Cons(y, ys) -> Cons((x,y), combine xs ys)
 
   (* The OCaml List module defines
      List.map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
@@ -241,8 +244,7 @@ module Functions = struct
      Implement it using fold_left.
      Rank: **
    *)
-  let rev l =
-    assert false
+  let rev l = fold_left (fun acc x-> x:: acc) [] l
 
   (* On the other hand it is much more challenging to do it in terms
      of fold_right.
@@ -265,7 +267,7 @@ module Functions = struct
 
      Rank: **
    *)
-  let for_all p l = assert false
+  let for_all p l = fold_right (fun x acc-> p x && acc) l true 
 
   (* exists : ('a -> bool) -> 'a mylist -> bool *)
   (* `exists p l` is true
@@ -277,7 +279,7 @@ module Functions = struct
 
      Rank: **
    *)
-  let exists p l = assert false
+  let exists p l = fold_right (fun x acc-> acc || p x) l false
 
   (* By the way, in formal logic we can make the following observation:
 
@@ -296,8 +298,8 @@ module Functions = struct
 
      Rank: **
    *)
-  let for_all' p l = assert false
-  let exists' p l = assert false
+  let for_all' p l = not (exists (fun x -> not (p x)) l)
+  let exists' p l = not( for_all (fun x -> not ( p x)) l)
 
   (* Prove, using induction, the following.
 
@@ -323,7 +325,7 @@ module Functions = struct
 
      Rank: *
    *)
-  let sum l = assert false
+  let sum l = fold_right (+) l 0
 
   (* Prove, using induction, the following theorem.
 
@@ -387,7 +389,12 @@ module Functions = struct
 
      Rank: *
    *)
-  let pairs l = assert false
+  let rec pairs l = match l with
+  | [] -> []
+  | x :: xs -> match xs with
+    | [] -> []
+    | y :: ys -> (x,y) :: pairs xs
+
 
   (* Your previous implementation was almost certainly not tail
      recursive, so let's rewrite it tail-recursively using continuations.
@@ -396,7 +403,12 @@ module Functions = struct
 
      Rank: **
    *)
-  let pairs_k l k = assert false
+  let rec pairs_k l k = match l with
+  | [] -> k []
+  | x :: [] -> k []
+  | x :: xs -> match xs with
+     | [] -> return []
+      | y :: ys -> pairs_k xs (fun l -> k ((x,y) :: l))
 
   (* I know I said no more folds, but I can't help myself.
 
@@ -415,7 +427,7 @@ module Functions = struct
      scan_left f e [x1;x2;...]
      = [f e x1; f (f e x1) x2; f (f (f e x1) x2) x3; ...]
    *)
-  let scan_left f acc l = assert false
+  let scan_left f acc l = acc :: fold_left (fun acc x -> f acc x :: acc) [] l
 
   (* Okay, now that's enough with lists. *)
   (* Next topic: math *)
@@ -447,7 +459,7 @@ module Functions = struct
 
      Rank: *
    *)
-  let exp_base b x = assert false
+  let exp_base b x = Exp(Times(x, Ln(b)))
 
   (* Use exp_base to construct the reciprocal.
 
@@ -458,7 +470,7 @@ module Functions = struct
 
      (Recall: 1/e = e^-1)
    *)
-  let recip e = assert false
+  let recip e = exp_base e (Lit(-1.0))
 
   (* Computationally, it's inefficient to detour through
      the exponential and ln for integer powers.
@@ -474,7 +486,9 @@ module Functions = struct
 
      Rank: *
    *)
-  let pow e k = assert false
+  let rec pow e k = 
+    if k = 0 then e else
+      Times(e, pow e (k-1))
 
   (* Polynomials are an important class of functions.
      We would like a convenience function for constructing polynomials
@@ -489,7 +503,12 @@ module Functions = struct
 
      Rank: **
    *)
-  let poly x cs = assert false
+  let poly x cs = 
+    let rec poly_helper x cs n = match cs with
+    | [] -> []
+    | x :: xs -> Plus(Times(x, exp_base x n), poly_helper x xs )
+
+  in poly_helper x cs 0
 
   (* We would like to evaluate an expression.
 
@@ -510,7 +529,13 @@ module Functions = struct
 
      Rank: *
    *)
-  let eval e = assert false
+  let eval e = match e with
+  | Var x -> failwith "oh no"
+  | Lit x -> x
+  | Plus (e1, e2) -> eval e1 +. eval e2
+  | Times (e1, e2) -> eval e1 *. eval e2
+  | Exp e -> exp (eval e)
+  | Ln e -> log (eval e)
 
   (* Sadly, not all expressions are free of variables!
 
@@ -527,7 +552,13 @@ module Functions = struct
 
      Rank: *
    *)
-  let subst (x, e') e = assert false
+  let rec subst (x, e') e = match e with
+  | Var y -> if e' = y then e' else y1
+  | Lit y -> y
+  | Plus(x1, x2) -> Plus(subst (x,e') x1, subst (x,e') x2)
+  | Times(x1, x2) -> Times(subst (x,e') x1, subst (x,e') x2)
+  | Exp x -> Exp(subst (x,e') x)
+  | Ln x -> Ln(subst (x,e') x)
 
   (* Implement the function
      eval_at : string * float -> exp -> float
@@ -541,7 +572,7 @@ module Functions = struct
 
      Rank: zero stars
    *)
-  let eval_at = assert false
+  let eval_at (x, a) e = eval (subst (x, Lit a) e)
 
   (* Differentiation is a technique from calculus allowing us to
      determine the slope the tangent line of a given curve at a given
@@ -570,7 +601,13 @@ module Functions = struct
 
      Rank: **
    *)
-  let deriv x e = assert false
+  let deriv x e = match e with
+  | Var y -> if x = y then Lit 1.0 else Lit 0.0
+  | Lit y -> Lit 0.0
+  | Plus(x1, x2) -> Plus(deriv x x1, deriv x x2)
+  | Times(x1, x2) -> Plus(Times(x1, deriv x x2), Times(deriv x x1, x2))
+  | Exp x -> Times(Exp x, deriv x x)
+  | Ln x -> Times(recip x, deriv x x)
 
   (* The Newton-Raphson method is a technique for finding the roots of
      a given function.
@@ -608,7 +645,7 @@ module Functions = struct
 
      Rank: **
    *)
-  let nr x0 e = assert false
+  let nr x0 e =
 
   (* Are you tired of calculus? I'm tired of calculus.
      Let's talk about code generation / partial evaluation. *)
@@ -638,7 +675,12 @@ module Functions = struct
 
      Rank: *
    *)
-  let pow_gen k = assert false
+  let pow_gen k = 
+    if k = 0 then
+      fun _ -> 1
+    else
+      let f = pow_gen (k-1) in 
+      fun x -> x * f x
 
   (* Back to lists!
 
@@ -657,7 +699,7 @@ module Functions = struct
 
      Rank: *
    *)
-  let app_gen l1 = assert false
+  let app_gen l1 = fun l2 -> l1 @ l2
 
   (* In the section on math, you implemented the function
      `subst` which replaces all occurrences of a specified variable
@@ -697,7 +739,14 @@ module Functions = struct
 
      Rank: **
    *)
-  let poly_gen cs = assert false
+  let poly_gen cs = 
+    let rec poly_gen' cs k = 
+      match cs with
+      | [] -> 0
+      | c::cs' -> c * pow k x + poly_gen' cs' (k+1)
+    in
+    poly_gen' cs 0
+
 
   (* Consider a type of binary tree. *)
   type 'a tree =
@@ -721,7 +770,11 @@ module Functions = struct
 
      Rank: *
    *)
-  let insert t k v = assert false
+  let insert t key value = match tree with
+  | Empty -> None
+  | Node(l,(k,v),r) -> if k = key then (Node(l, k, value,r))else
+    if k > key then (Node (insert l key value, (k,v), r)) else 
+      (Node (l,(k,v),insert r key value)) 
 
   (* Is your implementation of insert tail recursive?
      Explain by giving the definition of a tail recursive function.
@@ -740,7 +793,11 @@ module Functions = struct
 
      Rank: *
    *)
-  let lookup t k = assert false
+  let lookup t key = match t with
+  | Empty -> None
+  | Node (l,(k,v), r) -> if key = k then Some v else
+    if k > key then lookup l key else
+      lookup r key
 
   (* Prove, using induction, the following theorem.
 
@@ -770,7 +827,17 @@ module Functions = struct
 
      Rank: **
    *)
-  let insert_gen t k = assert false
+  let insert_gen t key =  match t with
+  |Empty -> (fun x -> Node (Empty, (key, x), Empty))
+  |Node (l,(k,v), r) -> 
+      if k = key then 
+        (fun x -> Node (l, (k, x),r))
+      else if k > key then 
+        let f = insert_gen l key in 
+        (fun x -> Node(f x, (k,v), r))
+      else 
+        let f = insert_gen r key in 
+        (fun x -> Node (l,(k,v),f x))
 end
 
 module Lazy = struct
@@ -791,7 +858,9 @@ module Lazy = struct
 
       Rank: *
    *)
-  let nth n s = assert false
+  let nth n s = 
+    if n = 0 then s.hd else
+      nth (n-1) (force s.tl)
 
   (** The fibonacci sequence is defined as
       fib 0 = 0
@@ -812,7 +881,12 @@ module Lazy = struct
       Use a helper function to calculate, given fib n and fib (n+1),
       the fibonacci sequence starting from fib (n+2).
    *)
-  let fib : int str = assert false
+  let fib : int str = 
+    let rec go n m ={
+      hd = n;
+      tl = Susp(fun () -> go (n+m) (n))
+    }
+    in go 0 1
 
   (** In mathematics, a sequence is defined as a function from the
       natural numbers to some other set. That is, for each natural
@@ -827,7 +901,13 @@ module Lazy = struct
 
       Rank: *
    *)
-  let seq f = assert false
+  let seq f = 
+    let rec go n =
+      {
+        hd = f n;
+        tl = Susp(fun ()-> go (n+1))
+      }
+    in go 0
 
   (** The Wallis product, published in 1656, is an infinite product
       whose limit is pi/2. It is among the oldest known ways to
@@ -870,9 +950,13 @@ module Lazy = struct
    *)
   let wallis_1 =
     let rec f n =
-      assert false
+      if n = 0 then 4.0 /. 3.0
+      else
+        let x = (float_of_int) (4*(n+1)*(n+1)) in
+        let y = (float_of_int) (4*(n+1)*(n+1) - 1) in
+        (x /. y) *. (f (n-1))
     in
-    assert false
+    seq f
 
   (** This previous method is quite inefficient, since it recalculates
       the same things over and over again, through the recursive
@@ -892,7 +976,17 @@ module Lazy = struct
 
       Rank: **
    *)
-  let wallis_2 = assert false
+  let wallis_2 = 
+    let rec go n w_n =
+      let x = (float_of_int) (4*(n+1)*(n+1)) in
+      let y = (float_of_int) (4*(n+1)*(n+1) - 1) in
+      let a_n = x /. y in
+      {
+        hd = w_n;
+        tl = Susp (fun () -> go (n+1) (a_n *. w_n))
+      }
+    in
+    go 1 (4.0 /. 3.0)
 
   (** The super-Catalan numbers are a two-dimensional generalization
       of the Catalan numbers.
@@ -913,7 +1007,12 @@ module Lazy = struct
       0! = 1
       (n+1)! = n! * (n + 1)
    *)
-  let superc m n = assert false
+  let superc m n = 
+    let rec fact x =
+      if x = 0 then 1 else 
+      if x = 1 then 1 else
+        x * fact(x-1)
+      in fact(2*m) * fact(2*n) / fact(m+n) / fact(m) / fact(n)
 
   (** An infinite two-dimensional grid of integers can be modelled
       with the type `int str str`.
@@ -934,5 +1033,19 @@ module Lazy = struct
 
       Rank: **
    *)
-  let supercatalan = assert false
+  let supercatalan = 
+    let rec get_col m k =
+      {
+        hd = superc m k ;
+        tl = Susp (fun () -> get_col (m+1) k)
+      }
+    in
+    let cols = get_col 0 in
+    let rec get_supcat n =
+      {
+        hd = cols n ;
+        tl = Susp (fun () -> get_supcat (n+1))
+      }
+    in
+    get_supcat 0
 end
