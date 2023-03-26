@@ -89,7 +89,7 @@ module Functions = struct
 
      Rank: *
    *)
-  let map f l = match l with
+  let rec map f l = match l with
     | Nil -> Nil
     | Cons (h, t) -> Cons (f h, map f t)
 
@@ -154,7 +154,7 @@ module Functions = struct
      Rank: *
    *)
   let rec fold_left f e l = match l with
-  | None -> e
+  | Nil -> e
   | Cons(x, xs) -> fold_left f (f e x) xs
 
   (* Theoretically, any recursive function you can write for lists
@@ -405,9 +405,8 @@ module Functions = struct
    *)
   let rec pairs_k l k = match l with
   | [] -> k []
-  | x :: [] -> k []
   | x :: xs -> match xs with
-     | [] -> return []
+     | [] -> k []
       | y :: ys -> pairs_k xs (fun l -> k ((x,y) :: l))
 
   (* I know I said no more folds, but I can't help myself.
@@ -553,7 +552,7 @@ module Functions = struct
      Rank: *
    *)
   let rec subst (x, e') e = match e with
-  | Var y -> if e' = y then e' else y1
+  | Var y -> if e' = y then e' else y
   | Lit y -> y
   | Plus(x1, x2) -> Plus(subst (x,e') x1, subst (x,e') x2)
   | Times(x1, x2) -> Times(subst (x,e') x1, subst (x,e') x2)
@@ -740,12 +739,6 @@ module Functions = struct
      Rank: **
    *)
   let poly_gen cs = 
-    let rec poly_gen' cs k = 
-      match cs with
-      | [] -> 0
-      | c::cs' -> c * pow k x + poly_gen' cs' (k+1)
-    in
-    poly_gen' cs 0
 
 
   (* Consider a type of binary tree. *)
